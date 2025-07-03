@@ -1,0 +1,7 @@
+Artificial Intelligence (AI) is a branch of computer science focused on creating machines capable of performing tasks that normally require human intelligence. These tasks include learning, reasoning, problem-solving, understanding natural language, and recognizing images or sounds.
+
+AI technologies are applied in many sectors such as healthcare, where they assist in diagnosing diseases and personalizing treatments; finance, where they detect fraud and manage risk; transportation, through self-driving vehicles; and entertainment, by recommending personalized content. AI is powered by subfields including machine learning, which allows systems to improve from data; natural language processing, enabling interaction through speech and text; and computer vision, which helps interpret visual inputs.
+
+Despite its transformative potential, AI raises important ethical issues like data privacy, algorithmic bias, job displacement, and the need for transparent decision-making processes. Researchers, companies, and policymakers are working to create regulations and guidelines to ensure AI is developed safely and equitably.
+
+The future of AI holds promise for greater innovation and efficiency across industries, but it also demands careful oversight and collaboration to maximize benefits while minimizing risks. Ongoing advancements will shape how societies adapt to and harness AI technologies responsibly.

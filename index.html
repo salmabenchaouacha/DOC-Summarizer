@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Document Summarizer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      margin: 0; 
+      padding: 0;
+      height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #c4cfff 0%, #e2c5ff 50%, #fbd3ff 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      color: #2d3748;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      min-height: 100vh;
+      overflow: auto;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 3rem 2.5rem;
+      border-radius: 24px;
+      max-width: 800px;
+      width: 100%;
+      box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+      transform: translateY(0);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+      background-size: 200% 100%;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .container:hover {
+      transform: translateY(-5px);
+      box-shadow: 
+        0 35px 70px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.15);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    h1 {
+      margin: 0 0 0.5rem 0;
+      font-weight: 700;
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      color: #718096;
+      font-size: 1.1rem;
+      font-weight: 400;
+      margin: 0;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* File Upload Section */
+    .upload-section {
+      position: relative;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .file-drop-zone {
+      border: 2px dashed #cbd5e0;
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .file-drop-zone:hover {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+      transform: translateY(-2px);
+    }
+
+    .file-drop-zone.dragover {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 1rem;
+      opacity: 0.6;
+      transition: all 0.3s ease;
+    }
+
+    .file-drop-zone:hover .upload-icon {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .upload-text {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 0.5rem;
+    }
+
+    .upload-subtext {
+      font-size: 0.9rem;
+      color: #718096;
+    }
+
+    #file-name {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: linear-gradient(135deg, #e6fffa 0%, #d1f999 100%);
+      border-radius: 12px;
+      font-size: 0.95rem;
+      color: #234e52;
+      font-weight: 500;
+      border: 1px solid #81e6d9;
+      display: none;
+    }
+
+    #file-name.show {
+      display: block;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Model Selection */
+    .model-section {
+      background: #f8fafc;
+      padding: 1.5rem;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .model-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .model-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .model-option {
+      position: relative;
+    }
+
+    .model-option input[type="radio"] {
+      display: none;
+    }
+
+    .model-option label {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: white;
+      font-weight: 500;
+      position: relative;
+    }
+
+    .model-option label::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border: 2px solid #cbd5e0;
+      border-radius: 50%;
+      margin-right: 0.75rem;
+      transition: all 0.3s ease;
+    }
+
+    .model-option input[type="radio"]:checked + label {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+      color: #2b6cb0;
+    }
+
+    .model-option input[type="radio"]:checked + label::before {
+      border-color: #667eea;
+      background: #667eea;
+      box-shadow: inset 0 0 0 3px white;
+    }
+
+    .model-option label:hover {
+      border-color: #a0aec0;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Submit Button */
+    .submit-section {
+      margin-top: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Summary Section */
+    #summary {
+      margin-top: 2.5rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+      border-radius: 16px;
+      color: #1a202c;
+      font-size: 1rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      border: 1px solid #9ae6b4;
+      min-height: 120px;
+      text-align: left;
+      overflow-wrap: break-word;
+      box-shadow: 0 8px 25px rgba(76, 175, 80, 0.1);
+      position: relative;
+    }
+
+    #summary::before {
+      content: '📝 Summary';
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #2d5a3d;
+      opacity: 0.8;
+    }
+
+    /* Loading Animation */
+    .loading {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .loading::after {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border: 2px solid #cbd5e0;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      .container {
+        padding: 2rem 1.5rem;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .model-options {
+        grid-template-columns: 1fr;
+      }
+      
+      .file-drop-zone {
+        padding: 2rem 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+      
+      button {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="main" aria-label="File upload form and summary">
+    <div class="header">
+      <h1>📄 Document Summarizer ✨</h1>
+      <p class="subtitle">🚀 Upload your text document and get an AI-powered summary 🤖</p>
+    </div>
+    
+    <form id="upload-form" enctype="multipart/form-data">
+      <div class="upload-section">
+        <input type="file" id="file-input" name="file" accept=".txt" required aria-label="Choose a text file to upload" />
+        <div class="file-drop-zone" id="drop-zone">
+          <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          <div class="upload-text">📂 Drop your file here or click to browse 👆</div>
+          <div class="upload-subtext">💡 Supports .txt  .md .pdf .html .csv files</div>
+        </div>
+        <div id="file-name">No file chosen</div>
+      </div>
+
+      <div class="model-section">
+        <div class="model-title">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M9.5 2A1.5 1.5 0 008 3.5v1A1.5 1.5 0 009.5 6h5A1.5 1.5 0 0016 4.5v-1A1.5 1.5 0 0014.5 2h-5zM11 4h2v1h-2V4z"/>
+            <path d="M6 7.5A1.5 1.5 0 017.5 6h9A1.5 1.5 0 0118 7.5v9a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 016 16.5v-9z"/>
+          </svg>
+          🤖 Choose AI Model 🧠
+        </div>
+        <div class="model-options">
+          <div class="model-option">
+            <input type="radio" id="openai" name="model_choice" value="openai" checked>
+            <label for="openai"> OpenAI GPT</label>
+          </div>
+          <div class="model-option">
+            <input type="radio" id="gemini" name="model_choice" value="gemini">
+            <label for="gemini"> Google Gemini</label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="submit-section">
+        <button type="submit" id="submit-btn">
+          <span class="btn-text">🚀 Upload & Summarize ⚡</span>
+        </button>
+      </div>
+    </form>
+    
+    <div id="summary" hidden></div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const fileName = document.getElementById('file-name');
+    const dropZone = document.getElementById('drop-zone');
+    const form = document.getElementById('upload-form');
+    const summaryDiv = document.getElementById('summary');
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = submitBtn.querySelector('.btn-text');
+
+    // File input change handler
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    // Drop zone click handler
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('dragleave', handleDragLeave);
+    dropZone.addEventListener('drop', handleDrop);
+
+    function handleFileSelect() {
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileName.textContent = `✅ Selected: ${file.name}`;
+        fileName.classList.add('show');
+      } else {
+        fileName.textContent = "🚫 No file chosen";
+        fileName.classList.remove('show');
+      }
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      if (!dropZone.contains(e.relatedTarget)) {
+        dropZone.classList.remove('dragover');
+      }
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type === 'text/plain') {
+        fileInput.files = files;
+        handleFileSelect();
+      }
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      // Show loading state
+      summaryDiv.hidden = false;
+              summaryDiv.innerHTML = '<div class="loading">🔄 Processing your document... ⏳</div>';
+      submitBtn.disabled = true;
+              btnText.textContent = '⏳ Processing...';
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        summaryDiv.textContent = data.summary || "No summary returned.";
+      } catch (error) {
+        summaryDiv.innerHTML = `<strong style="color: #e53e3e;">❌ Error:</strong> ${error.message}`;
+        summaryDiv.style.background = 'linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%)';
+        summaryDiv.style.borderColor = '#fc8181';
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        btnText.textContent = '🚀 Upload & Summarize ⚡';
+      }
+    });
+  </script>
+</body>
+</html>
